@@ -41,22 +41,31 @@ check_root() {
 
 # Function to detect network interfaces
 detect_interfaces() {
-    print_status "Detecting network interfaces..."
+    print_status "Using configured interfaces..."
     
-    # Find WiFi interface
-    DETECTED_WIFI=$(ip link show | grep -E "wl|wlan" | head -1 | cut -d: -f2 | tr -d ' ')
-    if [[ -n "$DETECTED_WIFI" ]]; then
-        WIFI_INTERFACE="$DETECTED_WIFI"
+    # Only auto-detect if using default/generic interface names
+    if [[ "$WIFI_INTERFACE" =~ ^(wlan0|wifi)$ ]]; then
+        print_status "Auto-detecting WiFi interface..."
+        DETECTED_WIFI=$(ip link show | grep -E "wl|wlan" | head -1 | cut -d: -f2 | tr -d ' ')
+        if [[ -n "$DETECTED_WIFI" ]]; then
+            WIFI_INTERFACE="$DETECTED_WIFI"
+            print_success "Detected WiFi interface: $WIFI_INTERFACE"
+        fi
+    else
+        print_success "Using configured WiFi interface: $WIFI_INTERFACE"
     fi
     
-    # Find Ethernet interface
-    DETECTED_ETH=$(ip link show | grep -E "eth|en" | head -1 | cut -d: -f2 | tr -d ' ')
-    if [[ -n "$DETECTED_ETH" ]]; then
-        ETH_INTERFACE="$DETECTED_ETH"
+    # Only auto-detect if using default/generic interface names
+    if [[ "$ETH_INTERFACE" =~ ^(eth0|ethernet)$ ]]; then
+        print_status "Auto-detecting Ethernet interface..."
+        DETECTED_ETH=$(ip link show | grep -E "^[0-9]+: (eth[0-9]+|en[a-z0-9]+):" | grep -v "lo" | head -1 | cut -d: -f2 | tr -d ' ')
+        if [[ -n "$DETECTED_ETH" ]]; then
+            ETH_INTERFACE="$DETECTED_ETH"
+            print_success "Detected Ethernet interface: $ETH_INTERFACE"
+        fi
+    else
+        print_success "Using configured Ethernet interface: $ETH_INTERFACE"
     fi
-    
-    print_success "Using WiFi interface: $WIFI_INTERFACE"
-    print_success "Using Ethernet interface: $ETH_INTERFACE"
     
     # Verify interfaces exist
     if ! ip link show "$WIFI_INTERFACE" &>/dev/null; then
