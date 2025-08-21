@@ -25,11 +25,23 @@ sudo simple-router start
 ## Check if it's working
 
 ```
-simple-router status
+sudo simple-router status
 ```
 
 ## Disable NAT routing
 
 ```
 sudo simple-router stop
+```
+
+## Test routing functionality
+
+```
+sudo simple-router test
+```
+
+## Restart NAT routing
+
+```
+sudo simple-router restart
 ```

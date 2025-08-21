@@ -152,13 +152,15 @@ show_status() {
     # Check NAT rules
     echo
     echo "NAT Rules:"
-    if iptables -t nat -L POSTROUTING -n 2>/dev/null | grep -q "MASQUERADE.*$WIFI_INTERFACE"; then
+    if iptables -t nat -L -v 2>/dev/null | grep -q "MASQUERADE.*$WIFI_INTERFACE"; then
         echo -e "  MASQUERADE rule: ${GREEN}Active${NC}"
     else
         echo -e "  MASQUERADE rule: ${RED}Not found${NC}"
     fi
     
-    if iptables -L FORWARD -n 2>/dev/null | grep -q "$ETH_INTERFACE.*$WIFI_INTERFACE"; then
+    # Check for both forward directions
+    if iptables -L -v 2>/dev/null | grep -q "$ETH_INTERFACE.*$WIFI_INTERFACE" && \
+       iptables -L -v 2>/dev/null | grep -q "$WIFI_INTERFACE.*$ETH_INTERFACE"; then
         echo -e "  Forward rules: ${GREEN}Active${NC}"
     else
         echo -e "  Forward rules: ${RED}Not found${NC}"
@@ -185,12 +187,16 @@ test_routing() {
         return 1
     fi
     
-    # Check NAT rules
-    if iptables -t nat -L -n | grep -q "MASQUERADE.*$WIFI_INTERFACE"; then
-        print_success "NAT rules: Configured"
+    # Check NAT rules (only if running as root)
+    if [[ $EUID -eq 0 ]]; then
+        if iptables -t nat -L -v 2>/dev/null | grep -q "MASQUERADE.*$WIFI_INTERFACE"; then
+            print_success "NAT rules: Configured"
+        else
+            print_error "NAT rules: Missing"
+            return 1
+        fi
     else
-        print_error "NAT rules: Missing"
-        return 1
+        print_warning "NAT rules: Cannot check (run with sudo for full test)"
     fi
     
     print_success "Basic routing tests passed"
